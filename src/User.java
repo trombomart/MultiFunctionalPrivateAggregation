@@ -4,26 +4,26 @@ import java.util.ArrayList;
 
 public class User {
 
-    private PaillierSecret ski;
-    private PaillierPublic pki;
-    private BigInteger ni;
-    private BigInteger ni2;
-    private BigInteger gi;
-    private BigInteger phiNi;
+    private final PaillierSecret ski;
+    private final PaillierPublic pki;
+    private final BigInteger ni;
+    private final BigInteger ni2;
+    private final BigInteger gi;
+    private final BigInteger phiNi;
 
-    private ArrayList<BigInteger> coefficients;
-    private ArrayList<BigInteger> signatures;
+    private final ArrayList<BigInteger> coefficients;
+    private final ArrayList<BigInteger> signatures;
     private BigInteger a;
     private BigInteger sigma;
 
-    private PaillierPublic pkA;
-    private BigInteger nA;
-    private BigInteger nA2;
-    private BigInteger gA;
-    private BigInteger hA;
-    private BigInteger gS;
+    private final PaillierPublic pkA;
+    private final BigInteger nA;
+    private final BigInteger nA2;
+    private final BigInteger gA;
+    private final BigInteger hA;
+    private final BigInteger gS;
 
-    private int ID;
+    private final int ID;
 
     private ArrayList<PaillierPublic> pk;
 
@@ -35,7 +35,6 @@ public class User {
     private ArrayList<BigInteger> randomness_Out_Cipher_Own;
     private ArrayList<BigInteger> randomness_Out_Random_Own;
 
-    private BigInteger nA_Ciph;
     private BigInteger nA_Ciph_Own;
     private BigInteger nA_Random;
     private BigInteger nA_Random_Own;
@@ -46,6 +45,8 @@ public class User {
 
     public BigInteger c;
     public BigInteger s;
+
+    public ArrayList<Integer> data;
 
     public User(int ID, PaillierPublic pkA, ArrayList<BigInteger> coefficients, BigInteger hA, ArrayList<BigInteger> signatures, BigInteger gS) {
         this.ID = ID;
@@ -66,6 +67,10 @@ public class User {
         gA = pkA.getG();
         this.hA = hA;
         this.gS = gS;
+    }
+
+    public void setData(ArrayList<Integer> data) {
+        this.data = data;
     }
 
     public PaillierPublic getPK() {
@@ -143,10 +148,10 @@ public class User {
         c = gA.modPow(m, nA2).multiply(hA.modPow(s, nA2)).mod(nA2);
     }
 
-    public BigInteger sendCipher() {
-        int message = (int) (Math.random()*coefficients.size()%coefficients.size());
-        a = coefficients.get(message);
-        sigma = signatures.get(message);
+    public BigInteger sendCipher(int round) {
+        //int message = (int) (Math.random()*coefficients.size()%coefficients.size());
+        a = coefficients.get(data.get(round));
+        sigma = signatures.get(data.get(round));
         System.out.println("User " + ID + " has coefficient " + a);
         generateCipher(a);
         return c;
@@ -165,8 +170,7 @@ public class User {
 
     public BigInteger sendNaCipher() {
         nA_Random = pkA.generateR();
-        nA_Ciph = PaillierSecret.encrypt(pkA, nA, nA_Random);
-        return nA_Ciph;
+        return PaillierSecret.encrypt(pkA, nA, nA_Random);
     }
 
     public BigInteger sendNaCipherOwn() {

@@ -10,31 +10,36 @@ public class Aggregator {
     private ArrayList<User> users;
     private ArrayList<PaillierPublic> pk;
 
-    private BigInteger x;
-    private PaillierPublic pkA;
-    private PaillierSecret skA;
-    private BigInteger nA;
-    private BigInteger nA2;
-    private BigInteger gA;
-    private BigInteger gS;
-    private BigInteger hA;
+    private final BigInteger x;
+    private final PaillierPublic pkA;
+    private final PaillierSecret skA;
+    private final BigInteger nA;
+    private final BigInteger nA2;
+    private final BigInteger gS;
+    private final BigInteger hA;
 
     private HashMap<Integer, ArrayList<BigInteger>> randomness;
     private HashMap<Integer, ArrayList<BigInteger>> randomnessOwn;
 
+    private final int k;
 
-    public Aggregator(int amountOfUsers, int amountOfValues) {
+
+    public Aggregator(int amountOfUsers, int amountOfValues, int k) {
+        this.k = k;
         skA = new PaillierSecret();
         pkA = skA.getPublicKey();
         nA = pkA.getN();
         nA2 = pkA.getN2();
-        gA = pkA.getG();
         gS = nA.add(BigInteger.ONE);
         hA = nA.add(BigInteger.ONE);
         x = new BigInteger(2048, new SecureRandom()).mod(nA);
 
         generateCoefficients(amountOfValues, amountOfUsers);
         generateUsers(amountOfUsers);
+    }
+
+    public ArrayList<User> getUsers() {
+        return users;
     }
 
     public void generateUsers(int amountOfUsers) {
@@ -45,7 +50,11 @@ public class Aggregator {
             pk.add(users.get(i).getPK());
         }
         for(int i = 0; i < amountOfUsers; i++) {
-            users.get(i).setPk(pk);
+            ArrayList<PaillierPublic> tempPK = new ArrayList<>();
+            for (int j = 1; j <= k; j++) {
+                tempPK.add(users.get((i+j)%amountOfUsers).getPK());
+            }
+            users.get(i).setPk(tempPK);
         }
 
     }
@@ -62,15 +71,20 @@ public class Aggregator {
             while(!setUpSignature(currentCoefficient)) {
                 currentCoefficient = currentCoefficient.add(BigInteger.ONE);
             }
+            if (currentCoefficient.multiply(BigInteger.valueOf(amountOfUsers)).compareTo(nA) > 0) {
+                System.out.println("Too many coefficients: " + i);
+                System.exit(-1);
+            }
             coefficients.add(currentCoefficient);
         }
+        System.out.println("Coefficients generated");
     }
 
     public boolean setUpSignature(BigInteger coefficient) {
         try {
             BigInteger exp = x.add(coefficient).modInverse(nA);
-            BigInteger signaure = gS.modPow(exp, nA2);
-            signatures.add(signaure);
+            BigInteger signature = gS.modPow(exp, nA2);
+            signatures.add(signature);
             return true;
         } catch (ArithmeticException e) {
             return false;
@@ -89,17 +103,17 @@ public class Aggregator {
             ArrayList<BigInteger> ci = users.get(i).getRandomnessOwn();
             ArrayList<BigInteger> cj = users.get(i).getRandomness();
             ArrayList<ProofPlainTextEquality> proofs = users.get(i).getRandomnessEquality();
-            boolean valid = true;
-            for (int j = 0; j < users.size(); j++) {
+            boolean valid;
+            for (int j = 0; j < k; j++) {
                 if (i != j) {
                     valid = proofs.get(j).verify(ci.get(j), cj.get(j));
                     if (!valid) {
-                        System.out.println("Verification randomness fails for users " + i + " and " + j);
+                        System.out.println("Verification randomness fails for users " + i + " and " + (i+j+1)%users.size());
                         break;
                     }
                     rOwn.add(ci.get(j));
-                    randomness.get(j).add(cj.get(j));
-                    users.get(j).receiveRandomness(cj.get(j));
+                    randomness.get((i+j+1)%users.size()).add(cj.get(j));
+                    users.get((i+j+1)%users.size()).receiveRandomness(cj.get(j));
                 }
             }
             randomnessOwn.put(i, rOwn);
@@ -141,10 +155,10 @@ public class Aggregator {
         return valid;
     }
 
-    public BigInteger aggregate() {
+    public BigInteger aggregate(int round) {
         BigInteger c = BigInteger.ONE;
         for (int i = 0; i < users.size(); i++) {
-            BigInteger ci = users.get(i).sendCipher();
+            BigInteger ci = users.get(i).sendCipher(round);
             c = c.multiply(ci);
             if (!verify(ci, i, users.get(i)))
                 System.out.println("Invalid ciphertext user " + i);

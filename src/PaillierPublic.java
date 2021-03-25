@@ -3,9 +3,9 @@ import java.security.SecureRandom;
 
 public class PaillierPublic {
 
-    private BigInteger n;
-    private BigInteger n2;
-    private BigInteger g;
+    private final BigInteger n;
+    private final BigInteger n2;
+    private final BigInteger g;
 
     public PaillierPublic(BigInteger n, BigInteger n2, BigInteger g) {
         this.n = n;

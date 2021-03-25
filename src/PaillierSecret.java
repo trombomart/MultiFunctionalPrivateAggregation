@@ -3,18 +3,16 @@ import java.security.SecureRandom;
 
 public class PaillierSecret {
 
-    private BigInteger p;
-    private BigInteger q;
-    private BigInteger n;
-    private BigInteger n2;
-    private BigInteger g;
-    private BigInteger lambda;
-    private BigInteger mu;
-    private BigInteger phiN;
+    private final BigInteger n;
+    private final BigInteger n2;
+    private final BigInteger g;
+    private final BigInteger lambda;
+    private final BigInteger mu;
+    private final BigInteger phiN;
 
     public PaillierSecret() {
-        p = BigInteger.probablePrime(1024, new SecureRandom());
-        q = BigInteger.probablePrime(1024, new SecureRandom());
+        BigInteger p = BigInteger.probablePrime(1024, new SecureRandom());
+        BigInteger q = BigInteger.probablePrime(1024, new SecureRandom());
         n = p.multiply(q);
         n2 = n.multiply(n);
         g = n.add(BigInteger.ONE);

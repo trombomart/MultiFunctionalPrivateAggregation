@@ -14,7 +14,7 @@ public class Util {
             MessageDigest digest = MessageDigest.getInstance("SHA-256");
             return digest.digest(bytes);
         } catch(NoSuchAlgorithmException e) {
-            System.out.println(e);
+            System.out.println(e.getMessage());
         }
         return null;
     }

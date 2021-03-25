@@ -1,27 +1,27 @@
 import java.math.BigInteger;
 import java.security.SecureRandom;
 import java.util.ArrayList;
+import java.util.Objects;
 
 public class ProofSetMembership {
 
-    private BigInteger gA;
-    private BigInteger nA;
-    private BigInteger nA2;
-    private BigInteger gS;
-    private BigInteger hA;
-    private BigInteger B;
-    private BigInteger B1;
-    private BigInteger D;
-    private BigInteger c1;
-    private BigInteger D1;
-    private BigInteger s1;
-    private BigInteger s2;
-    private BigInteger s3;
-    private BigInteger h;
+    private final BigInteger gA;
+    private final BigInteger nA2;
+    private final BigInteger gS;
+    private final BigInteger hA;
+    private final BigInteger B;
+    private final BigInteger B1;
+    private final BigInteger D;
+    private final BigInteger c1;
+    private final BigInteger D1;
+    private final BigInteger s1;
+    private final BigInteger s2;
+    private final BigInteger s3;
+    private final BigInteger h;
 
     public ProofSetMembership(PaillierPublic pkA, BigInteger c, BigInteger ai, BigInteger sigmai, BigInteger gS, BigInteger hA, BigInteger s_, BigInteger si) {
         gA = pkA.getG();
-        nA = pkA.getN();
+        BigInteger nA = pkA.getN();
         nA2 = pkA.getN2();
         this.gS = gS;
         this.hA = hA;
@@ -41,7 +41,7 @@ public class ProofSetMembership {
         byteList.add(B);
         byteList.add(D);
         byte[] bytes = Util.combineByteArrays(byteList);
-        h = new BigInteger(Util.SHA256(bytes));
+        h = new BigInteger(Objects.requireNonNull(Util.SHA256(bytes)));
 
         s1 = a_.add(h.multiply(ai)).mod(nA);
         s2 = s_.add(h.multiply(si));
@@ -56,15 +56,12 @@ public class ProofSetMembership {
         byteList.add(B);
         byteList.add(D_);
         byte[] bytes = Util.combineByteArrays(byteList);
-        BigInteger h = new BigInteger(Util.SHA256(bytes));
+        BigInteger h = new BigInteger(Objects.requireNonNull(Util.SHA256(bytes)));
 
         BigInteger c1_ = gA.modPow(s1, nA2).multiply(hA.modPow(s2, nA2)).multiply(c.modInverse(nA2).modPow(h, nA2)).mod(nA2);
         BigInteger D1_ = B1.modPow(s1, nA2).multiply(gS.modPow(s3, nA2)).multiply(D_.modInverse(nA2).modPow(h, nA2)).mod(nA2);
 
-        if(D.equals(D_) && c1.equals(c1_) && D1.equals(D1_))
-            return true;
-        else
-            return false;
+        return D.equals(D_) && c1.equals(c1_) && D1.equals(D1_);
 
     }
 
